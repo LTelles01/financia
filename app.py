@@ -1137,44 +1137,113 @@ with col_main:
         pd_ = pat_r_def[idx]
         ap  = ap_r[idx]
         dt  = datas[idx]
-        rows_html.append(f"""
-        <tr>
-          <td class="c-date">{fmt_date(dt).upper()}</td>
-          <td class="c-period">{a} ano{'s' if a>1 else ''}</td>
-          <td class="c-age">{int(idade+a)} anos</td>
-          <td>{fmt(ap)}</td>
-          <td>{fmt(inv)}</td>
-          <td class="c-pat">{fmt(p)}</td>
-          <td>
-            <span class="c-rend-main">+{fmt(r)}</span>
-            <span class="c-rend-sub">({rp:.0f}%)</span>
-          </td>
-          <td class="c-real">{fmt(pd_)}</td>
-        </tr>
-        """)
+        row = (
+            "<tr>"
+            f'<td class="c-date">{fmt_date(dt).upper()}</td>'
+            f'<td class="c-period">{a} ano{"s" if a>1 else ""}</td>'
+            f'<td class="c-age">{int(idade+a)} anos</td>'
+            f"<td>{fmt(ap)}</td>"
+            f"<td>{fmt(inv)}</td>"
+            f'<td class="c-pat">{fmt(p)}</td>'
+            f'<td><span class="c-rend-main">+{fmt(r)}</span>'
+            f'<span class="c-rend-sub">({rp:.0f}%)</span></td>'
+            f'<td class="c-real">{fmt(pd_)}</td>'
+            "</tr>"
+        )
+        rows_html.append(row)
 
-    table_html = f"""
-    <div class="ptable-wrap">
-      <table class="ptable">
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Período</th>
-            <th>Idade</th>
-            <th>Aporte Mensal</th>
-            <th>Total Investido</th>
-            <th>Patrimônio Nom.</th>
-            <th>Rendimento</th>
-            <th>Valor Real (hoje)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {''.join(rows_html)}
-        </tbody>
-      </table>
-    </div>
+    # Render via components.html — isolated iframe, avoids markdown parser issues
+    table_css = """
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body {
+        margin: 0; padding: 0;
+        background: transparent;
+        font-family: 'DM Sans', sans-serif;
+        color: #E8EDF5;
+      }
+      .ptable-wrap {
+        background: linear-gradient(180deg, rgba(255,255,255,.022), rgba(255,255,255,.008));
+        border: 1px solid rgba(255,255,255,.07);
+        border-radius: 20px;
+        overflow: hidden;
+      }
+      .ptable {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 12.5px;
+      }
+      .ptable thead th {
+        background: rgba(255,255,255,.025);
+        border-bottom: 1px solid rgba(255,255,255,.07);
+        color: rgba(160,180,205,.6);
+        font-weight: 500;
+        font-size: 10px;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        padding: .9rem 1rem;
+        text-align: right;
+        white-space: nowrap;
+      }
+      .ptable thead th:nth-child(1),
+      .ptable thead th:nth-child(2),
+      .ptable thead th:nth-child(3) { text-align: left; }
+      .ptable tbody td {
+        padding: .78rem 1rem;
+        border-bottom: 1px solid rgba(255,255,255,.04);
+        color: #E8EDF5;
+        text-align: right;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .ptable tbody td:nth-child(1),
+      .ptable tbody td:nth-child(2),
+      .ptable tbody td:nth-child(3) { text-align: left; }
+      .ptable tbody tr { transition: background .2s; }
+      .ptable tbody tr:hover { background: rgba(92,189,145,.035); }
+      .ptable tbody tr:last-child td { border-bottom: none; }
+      .c-date {
+        font-family: 'Syne', sans-serif;
+        font-weight: 700;
+        color: #5CBD91;
+        font-size: 11.5px;
+        letter-spacing: .06em;
+      }
+      .c-period { color: rgba(220,230,245,.85); font-weight: 500; }
+      .c-age { color: rgba(175,195,215,.55); font-size: 12px; }
+      .c-pat { font-weight: 600; color: #5CBD91; }
+      .c-real { color: #E8A87C; font-weight: 500; }
+      .c-rend-main { color: #5CBD91; font-weight: 500; }
+      .c-rend-sub { color: rgba(160,180,205,.45); font-size: 11px; margin-left: 6px; }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-thumb { background: rgba(92,189,145,.2); border-radius: 3px; }
+    </style>
     """
-    st.markdown(table_html, unsafe_allow_html=True)
+
+    table_body = (
+        '<div class="ptable-wrap">'
+        '<table class="ptable">'
+        '<thead><tr>'
+        '<th>Data</th>'
+        '<th>Período</th>'
+        '<th>Idade</th>'
+        '<th>Aporte Mensal</th>'
+        '<th>Total Investido</th>'
+        '<th>Patrimônio Nom.</th>'
+        '<th>Rendimento</th>'
+        '<th>Valor Real (hoje)</th>'
+        '</tr></thead>'
+        f'<tbody>{"".join(rows_html)}</tbody>'
+        '</table></div>'
+    )
+
+    # altura estimada: header (~42) + linhas (~42 cada) + padding
+    n_rows = len(rows_html)
+    table_height = 50 + n_rows * 42 + 20
+
+    components.html(table_css + table_body, height=table_height, scrolling=False)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
